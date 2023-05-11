@@ -1,9 +1,9 @@
 import React from 'react';
 import './App.css';
-import permutate from './permutate';
+// import permutate from './permutate';
 
 function App() {
-  const x = permutate([6, 3], (a) => true);
+  // permutate([6, 3], (a) => false);
   return (
     <h1>Hello world</h1>
   );

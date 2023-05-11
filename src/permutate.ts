@@ -10,40 +10,54 @@
   NOTE: when permutation succeeds, the array should be in the original state
   on exit!
 */
-export default function permutate<T>(array: T[], callback: (array: T[]) => boolean) {
-    // Do the actual permutation work on array[], starting at index
-    const p = (array: T[], index: number, callback: (array: T[]) => boolean) : number => {
+export default function permutate<T>(array: T[], callback?: (array: T[]) => boolean | void) {
 
-      // Swap elements i1 and i2 in array a[]
-      const swap = (a: T[], i1: number, i2: number) : void => {
-        let t = a[i1];
-        a[i1] = a[i2];
-        a[i2] = t;
-      }
+    // Do the actual permutation work on array[], starting at index
+    // The return value is the number of permutations performed,
+    // unless the callback function returned false at some point,
+    // in which case the return value is negative (and also indicates the number of permurations performed)
+    const p = (array: T[], index: number, callback?: (array: T[]) => boolean | void) : number => {
 
       // When we're on the last index in the array, we're done:
-      if (index == array.length - 1) {
-        callback(array); // Do the callback
-        return 1; // This is a single permutation
-      } else {
-        // Not on the last index - permutate the rest of the array as-is
-        let count = p(array, index + 1, callback);
-        // Then swap the element at index i to the front,
-        // permutate again and swap back
-        for (let i = index + 1; i < array.length; i++) {
-          swap(array, i, index);
-          count += p(array, index + 1, callback); // Increment the permutation count
-          swap(array, i, index);
+      if (index === array.length - 1) {
+        // Do the callback (if specified)
+        if (callback) {
+          // If the callback returns false, we abort further permutation:
+          if (callback(array) === false)
+            return -1; 
         }
-        // Return the number of permutations we performed
-        return count;
+        return 1; // This is a single permutation
       }
+
+      // Not on the last index - permutate the rest of the array as-is
+      // Then swap the element at index i to the front,
+      // permutate again and swap back
+      let count = 0;
+      for (let i = index; i < array.length; i++) {
+        // Swap element i and (our) index. Dummy swap if index === but no 'if' required
+        [array[i], array[index]] = [array[index], array[i]];
+        // Permutate again, inspect result
+        const subcount = p(array, index + 1, callback); 
+        // Swap back
+        [array[i], array[index]] = [array[index], array[i]];
+        if (subcount < 0)
+          return -(count - subcount); // Abort permutation, return a negative number
+        else
+          count += subcount;
+      }
+
+      // Return the number of permutations we performed
+      return count;
     }
 
     // ENTRY POINT FOR permutate(). If invalid or empty array, return 0 (no permutations)
-    if (!array || array.length == 0)
+    if (!array || array.length === 0)
       return 0;
-    else
-      // Permutate the array and return the number of permutations
-      return p(array, 0, callback);
+
+    // Permutate the array and return the number of permutations
+      let permutations = p(array, 0, callback);
+      if (permutations < 0)
+        return -permutations; // Aborted at some point
+      else
+        return permutations;
   }
