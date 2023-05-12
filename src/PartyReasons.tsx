@@ -27,9 +27,9 @@ function NewDate(props: { onAddDate: (date: InterestingDate) => void }) {
 
   return (<>
     <form onSubmit={(e) => { e.preventDefault(); if (date !== undefined) props.onAddDate({ name: name, date: date }) }}>
-      <input type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
-      <input type="submit" value="Add" />
+      <input className="input" type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
+      <input className="input" type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
+      <input className="button" type="submit" value="Add" />
     </form>
   </>);
 }
@@ -52,7 +52,7 @@ function NewDate(props: { onAddDate: (date: InterestingDate) => void }) {
 export function PartyReasons() {
   const context = useContext(AppContext);
 
-  const [firstDay, setFirstDay] = useState<moment.Moment>(moment().startOf('day'));
+  const [firstDay, setFirstDay] = useState<moment.Moment>(moment().startOf('month').startOf('day'));
   const [days, setDays] = useState<moment.Moment[]>([]);
   const [dates, setDates] = useState<InterestingDate[]>([]);
   const [selectedNames, setSelectedNames] = useState(new Set<string>());
@@ -80,9 +80,11 @@ export function PartyReasons() {
   // Create date list if first date changes
   useEffect(() => {
     const days: moment.Moment[] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 31; i++) {
       let d = firstDay.clone();
       d.add(i, 'days');
+      if (d.month() !== firstDay.month())
+        break;
       days.push(d);
     }
     setDays(days);
@@ -130,11 +132,9 @@ export function PartyReasons() {
     <NewDate onAddDate={(date) => { setDates([...dates, date]); setSelectedNames(selectedNames.add(date.name)) }} />
     <div className="level">
       <div className="level-left">
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(7, 'days'))}>&laquo;</button>
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'days'))}>&lt;</button>
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'months'))}>&lt;</button>
         {firstDay.format('LL')}
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(1, 'days'))}>&gt;</button>
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(7, 'days'))}>&raquo;</button>
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(1, 'months'))}>&gt;</button>
       </div>
     </div>
     <div>

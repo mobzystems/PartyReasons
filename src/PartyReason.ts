@@ -70,15 +70,15 @@ export class PartyReasonGenerator {
       if (totalDays % 7 === 0) {
         const weeks = totalDays / 7;
         let quality: PartyReasonQuality | undefined = undefined;
-        if (weeks % 500 === 0)
+        if (weeks % 1000 === 0)
           quality = PartyReasonQuality.Fantastic;
-        else if (weeks % 100 === 0)
+        else if (weeks % 500 === 0)
           quality = PartyReasonQuality.Excellent;
-        else if (weeks % 50 === 0)
+        else if (weeks % 250 === 0)
           quality = PartyReasonQuality.Good;
-        else if (weeks % 10 === 0)
+        else if (weeks % 100 === 0)
           quality = PartyReasonQuality.So_so;
-        else if (weeks % 5 === 0)
+        else if (weeks % 25 === 0)
           quality = PartyReasonQuality.Awful;
         if (quality)
           reasons.push(new PartyReason(quality, `${combiName} is ${weeks} weeks`));
