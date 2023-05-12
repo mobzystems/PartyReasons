@@ -12,7 +12,12 @@ const defaultAppState: AppState = { name: undefined };
 export const AppContext = createContext<AppState>(defaultAppState);
 
 function App() {
-  const [appState, setAppState] = useState<AppState>(defaultAppState)
+  const [appState, setAppState] = useState<AppState>(defaultAppState);
+  const url = new URL(window.location.href);
+  const name = url.searchParams.get('name');
+  if (name !== null && name !== appState.name)
+    setAppState({ name: name });
+  
   if (appState.name === undefined)
     return (<Login setName={(name: string) => setAppState({ ...appState,  name: name })} />);
   else

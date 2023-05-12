@@ -1,16 +1,20 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "./App";
-import { combinations } from "./combinations";
+// import { combinations } from "./combinations";
 import moment from "moment";
+import { InterestingDate, PartyReason, PartyReasonGenerator } from "./PartyReason";
 
-interface InterestingDate {
-  name: string,
-  date: moment.Moment
-}
-
-function SingleDate(props: { date: InterestingDate }) {
+function SingleDate(props: { date: InterestingDate, selected: boolean, onSelectionChanged: (selected: boolean) => void }) {
   return (<>
     <tr>
+      <td align="center">
+        <input
+          className="checkbox"
+          type="checkbox"
+          defaultChecked={props.selected}
+          onChange={(e) => props.onSelectionChanged(e.target.checked)}
+        />
+      </td>
       <td>{props.date.name}</td>
       <td>{props.date.date.format('LL')}</td>
     </tr>
@@ -23,62 +27,127 @@ function NewDate(props: { onAddDate: (date: InterestingDate) => void }) {
 
   return (<>
     <form onSubmit={(e) => { e.preventDefault(); if (date !== undefined) props.onAddDate({ name: name, date: date }) }}>
-      <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+      <input type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
       <input type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
       <input type="submit" value="Add" />
     </form>
   </>);
 }
 
-function Combination(props: { refDate: moment.Moment, dates: InterestingDate[] }) {
-  const ages = props.dates.map(d => { return { name: d.name, date: d.date, days: props.refDate.diff(d.date, 'days') } });
-  const totalDays = ages.map(d => d.days).reduce((prev, curr) => prev + curr);
-  const totalWeeks = totalDays / 7;
+// function Combination(props: { refDate: moment.Moment, dates: InterestingDate[] }) {
+//   const ages = props.dates.map(d => { return { name: d.name, date: d.date, days: props.refDate.diff(d.date, 'days') } });
+//   const totalDays = ages.map(d => d.days).reduce((prev, curr) => prev + curr);
+//   const totalWeeks = totalDays / 7;
 
-  return (
-    <td>
-      {totalDays} days
-      {totalDays % 7 === 0 && <>, <b>{`${totalWeeks} weeks`}</b></>}
-      {props.dates.length === 1 && props.dates[0].date.date() === props.refDate.date() && `, ${props.refDate.diff(props.dates[0].date, 'months')} months`}
-      {props.dates.length === 1 && props.dates[0].date.date() === props.refDate.date() && props.dates[0].date.month() === props.refDate.month() && <>, <b>{`${props.refDate.diff(props.dates[0].date, 'years')} years`}</b></>}
-    </td>
-  );
-}
+//   return (
+//     <td>
+//       {totalDays} days
+//       {totalDays % 7 === 0 && <>, <b>{`${totalWeeks} weeks`}</b></>}
+//       {props.dates.length === 1 && props.dates[0].date.date() === props.refDate.date() && `, ${props.refDate.diff(props.dates[0].date, 'months')} months`}
+//       {props.dates.length === 1 && props.dates[0].date.date() === props.refDate.date() && props.dates[0].date.month() === props.refDate.month() && <>, <b>{`${props.refDate.diff(props.dates[0].date, 'years')} years`}</b></>}
+//     </td>
+//   );
+// }
 
 export function PartyReasons() {
   const context = useContext(AppContext);
+
   const [firstDay, setFirstDay] = useState<moment.Moment>(moment().startOf('day'));
+  const [days, setDays] = useState<moment.Moment[]>([]);
   const [dates, setDates] = useState<InterestingDate[]>([]);
+  const [selectedNames, setSelectedNames] = useState(new Set<string>());
+  const [partyReasons, setPartyReasons] = useState<{ date: moment.Moment, reason: PartyReason }[]>([]);
 
-  const allCombinations = combinations(dates);
+  // const allCombinations = combinations(dates.filter(d => selectedNames.has(d.name)));
 
-  const days: moment.Moment[] = [];
-  for (let i = 0; i < 10; i++) {
-    let d = firstDay.clone();
-    d.add(i, 'days');
-    days.push(d);
-  }
+  useEffect(() => {
+    if (context.name === 'markus') {
+      const myDates = [
+        { name: 'markus', date: moment('1964-05-03') },
+        { name: 'annemarie', date: moment('1964-08-18') },
+        { name: 'tobias', date: moment('2001-11-26') },
+        { name: 'stephanie', date: moment('2003-07-11') }
+      ];
+      setDates(myDates);
+      setSelectedNames(new Set(myDates.map(d => d.name)));
+    } else {
+      setDates([]);
+    }
+  }, [context]);
+
+
+  // Create date list if first date changes
+  useEffect(() => {
+    const days: moment.Moment[] = [];
+    for (let i = 0; i < 7; i++) {
+      let d = firstDay.clone();
+      d.add(i, 'days');
+      days.push(d);
+    }
+    setDays(days);
+  }, [firstDay]);
+
+  useEffect(() => {
+    const generator = new PartyReasonGenerator(dates.filter(d => selectedNames.has(d.name)));
+    const newReasons = [];
+    for (const day of days) {
+      const reasons = generator.getPartyReasons(day);
+      for (const r of reasons) {
+        newReasons.push({ date: day, reason: r });
+      }
+    }
+
+    setPartyReasons(newReasons);
+  }, [dates, days, selectedNames]);
 
   return (<>
     <h1 className="title">Hello, {context.name}</h1>
-    <table className="table">
+    <table className="table is-NOT-sticky">
       <thead>
         <tr>
+          <th align="center">Select</th>
           <th>What</th>
           <th>When</th>
         </tr>
       </thead>
       <tbody>
-        {dates.map(d => <SingleDate key={d.name} date={d} />)}
+        {dates.map(d => <SingleDate
+          key={d.name}
+          date={d}
+          selected={selectedNames.has(d.name)}
+          onSelectionChanged={(s) => {
+            const names = new Set(selectedNames);
+            if (s)
+              names.add(d.name);
+            else
+              names.delete(d.name);
+            setSelectedNames(names);
+          }}
+        />)}
       </tbody>
     </table>
-    <NewDate onAddDate={(date) => setDates([...dates, date])} />
-    <div className="level has-text-left">
-      <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'days'))}>&lt;</button>
-      { firstDay.format('LL') }
-      <button className="button" onClick={() => setFirstDay(firstDay.clone().add(1, 'days'))}>&gt;</button>
+    <NewDate onAddDate={(date) => { setDates([...dates, date]); setSelectedNames(selectedNames.add(date.name)) }} />
+    <div className="level">
+      <div className="level-left">
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(7, 'days'))}>&laquo;</button>
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'days'))}>&lt;</button>
+        {firstDay.format('LL')}
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(1, 'days'))}>&gt;</button>
+        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(7, 'days'))}>&raquo;</button>
+      </div>
     </div>
-    <table className="table is-striped">
+    <table className="table is-striped is-sticky">
+      <tbody>
+        {partyReasons.map(pr =>
+          <tr>
+            <td>{pr.date.format('LL')}</td>
+            <td>{pr.reason.quality}</td>
+            <td>{pr.reason.reason}</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+    {/* <table className="table is-striped is-sticky">
       <thead>
         <tr>
           <th>Who</th>
@@ -86,17 +155,17 @@ export function PartyReasons() {
         </tr>
       </thead>
       <tbody>
-        {allCombinations.map(dates => 
-        <tr key={dates.map(d => d.name).join('/')}>
-          <td>
-            <ul>
-              {dates.map(d => <li key={d.name}>{d.name}</li>)}
-            </ul>
-          </td>
-          {days.map(refDate => <Combination key={dates.map(d => d.name).join('/') + '/' + refDate.format()} refDate={refDate} dates={dates} />)}
-        </tr>)}
+        {allCombinations.map(dates =>
+          <tr key={dates.map(d => d.name).join('/')}>
+            <td>
+              <ul>
+                {dates.map(d => <li key={d.name}>{d.name}</li>)}
+              </ul>
+            </td>
+            {days.map(refDate => <Combination key={dates.map(d => d.name).join('/') + '/' + refDate.format()} refDate={refDate} dates={dates} />)}
+          </tr>)}
       </tbody>
-    </table>
+    </table> */}
   </>);
 }
 
