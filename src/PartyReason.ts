@@ -5,7 +5,13 @@ export interface InterestingDate {
   date: moment.Moment
 }
 
-export type PartyReasonQuality = 'fantastic' | 'excellent' | 'good' | 'so-so' | 'awful';
+export enum PartyReasonQuality {
+  Awful,
+  So_so,
+  Good,
+  Excellent,
+  Fantastic,
+}
 
 export class PartyReason {
   constructor(public quality: PartyReasonQuality, public reason: string) {}
@@ -36,24 +42,24 @@ export class PartyReasonGenerator {
           if (p.date.month() === date.month()) {
             // The month matches too!
             const years = date.diff(p.date, 'years');
-            let quality: PartyReasonQuality = 'awful';
+            let quality: PartyReasonQuality = PartyReasonQuality.Awful;
             if (years % 25 === 0 || years % 10 === 0)
-              quality = 'fantastic';
+              quality = PartyReasonQuality.Fantastic;
             else
-              quality = 'excellent';
+              quality = PartyReasonQuality.Excellent;
             reasons.push(new PartyReason(quality, `${p.name} is ${years} years old`));
           } else {
             // Not same month - maybe nice number of months?
             const months = date.diff(p.date, 'months');
-            let quality: PartyReasonQuality = 'awful';
+            let quality: PartyReasonQuality = PartyReasonQuality.Awful;
             if (months % 100 === 0)
-              quality = 'fantastic';
+              quality = PartyReasonQuality.Fantastic;
             else if (months % 25 === 0)
-              quality = 'excellent';
+              quality = PartyReasonQuality.Excellent;
             else if (months % 10 === 0)
-              quality = 'good';
+              quality = PartyReasonQuality.Good;
             else if (months % 5 === 0)
-              quality = 'so-so';
+              quality = PartyReasonQuality.So_so;
             reasons.push(new PartyReason(quality, `${p.name} is ${months} months old`));
           }
         }
@@ -65,35 +71,34 @@ export class PartyReasonGenerator {
         const weeks = totalDays / 7;
         let quality: PartyReasonQuality | undefined = undefined;
         if (weeks % 500 === 0)
-          quality = 'fantastic';
+          quality = PartyReasonQuality.Fantastic;
         else if (weeks % 100 === 0)
-          quality = 'excellent';
+          quality = PartyReasonQuality.Excellent;
         else if (weeks % 50 === 0)
-          quality = 'good';
+          quality = PartyReasonQuality.Good;
         else if (weeks % 10 === 0)
-          quality = 'so-so';
+          quality = PartyReasonQuality.So_so;
         else if (weeks % 5 === 0)
-          quality = 'awful';
+          quality = PartyReasonQuality.Awful;
         if (quality)
           reasons.push(new PartyReason(quality, `${combiName} is ${weeks} weeks`));
       }
 
       let quality: PartyReasonQuality | undefined = undefined;
       if (totalDays % 5000 === 0)
-        quality = 'fantastic';
+        quality = PartyReasonQuality.Fantastic;
       else if (totalDays % 1000 === 0)
-        quality = 'excellent';
+        quality = PartyReasonQuality.Excellent;
       else if (totalDays % 500 === 0)
-        quality = 'good';
+        quality = PartyReasonQuality.Good;
       else if (totalDays % 250 === 0)
-        quality = 'so-so';
+        quality = PartyReasonQuality.So_so;
       else if (totalDays % 100 === 0)
-        quality = 'awful';
+        quality = PartyReasonQuality.Awful;
       if (quality)
-        reasons.push(new PartyReason('awful', `${combiName} is ${totalDays} days`));
+        reasons.push(new PartyReason(quality, `${combiName} is ${totalDays} days`));
     }
 
     return reasons;
   }
 }
-

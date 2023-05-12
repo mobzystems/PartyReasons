@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "./App";
 // import { combinations } from "./combinations";
 import moment from "moment";
-import { InterestingDate, PartyReason, PartyReasonGenerator } from "./PartyReason";
+import { InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality } from "./PartyReason";
 
 function SingleDate(props: { date: InterestingDate, selected: boolean, onSelectionChanged: (selected: boolean) => void }) {
   return (<>
@@ -57,6 +57,7 @@ export function PartyReasons() {
   const [dates, setDates] = useState<InterestingDate[]>([]);
   const [selectedNames, setSelectedNames] = useState(new Set<string>());
   const [partyReasons, setPartyReasons] = useState<{ date: moment.Moment, reason: PartyReason }[]>([]);
+  const [minimumQuality, setMinimumQuality] = useState(PartyReasonQuality.Good);
 
   // const allCombinations = combinations(dates.filter(d => selectedNames.has(d.name)));
 
@@ -136,12 +137,21 @@ export function PartyReasons() {
         <button className="button" onClick={() => setFirstDay(firstDay.clone().add(7, 'days'))}>&raquo;</button>
       </div>
     </div>
+    <div>
+      Show only reasons <select className="select" value={minimumQuality} onChange={e => setMinimumQuality(parseInt(e.target.value))}>
+      <option value={PartyReasonQuality.Fantastic}>{PartyReasonQuality[PartyReasonQuality.Fantastic]}</option>
+      <option value={PartyReasonQuality.Excellent}>{PartyReasonQuality[PartyReasonQuality.Excellent]}</option>
+      <option value={PartyReasonQuality.Good}>{PartyReasonQuality[PartyReasonQuality.Good]}</option>
+      <option value={PartyReasonQuality.So_so}>{PartyReasonQuality[PartyReasonQuality.So_so].replace('_', '-')}</option>
+      <option value={PartyReasonQuality.Awful}>{PartyReasonQuality[PartyReasonQuality.Awful]}</option>
+    </select> or better
+    </div>
     <table className="table is-striped is-sticky">
       <tbody>
-        {partyReasons.map(pr =>
-          <tr>
+        {partyReasons.filter(pr => pr.reason.quality >= minimumQuality).map(pr =>
+          <tr key={pr.reason.reason}>
             <td>{pr.date.format('LL')}</td>
-            <td>{pr.reason.quality}</td>
+            <td>{PartyReasonQuality[pr.reason.quality].replace('_', '-')}</td>
             <td>{pr.reason.reason}</td>
           </tr>
         )}
