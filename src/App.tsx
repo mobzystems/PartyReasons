@@ -7,7 +7,7 @@ export interface AppState {
   name: string | undefined;
 }
 
-const defaultAppState: AppState = { name: undefined };
+const defaultAppState: AppState = { name: 'test' };
 
 export const AppContext = createContext<AppState>(defaultAppState);
 
@@ -24,7 +24,11 @@ function App() {
   else
     return (
       <AppContext.Provider value={appState}>
-        <PartyReasons />
+        <div className="section">
+          <div className="container content">
+            <PartyReasons />
+          </div>
+        </div>
       </AppContext.Provider>
     );
 }

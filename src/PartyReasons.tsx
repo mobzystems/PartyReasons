@@ -4,7 +4,27 @@ import { AppContext } from "./App";
 import moment from "moment";
 import { InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality } from "./PartyReason";
 
-function SingleDate(props: { date: InterestingDate, selected: boolean, onSelectionChanged: (selected: boolean) => void }) {
+function QualityTag(props: { quality: PartyReasonQuality }) {
+  switch (props.quality) {
+    case PartyReasonQuality.Fantastic:
+      return <span className="tag is-success">Fantastic</span>;
+    case PartyReasonQuality.Excellent:
+      return <span className="tag is-primary">Excellent</span>;
+    case PartyReasonQuality.Good:
+      return <span className="tag is-warning">Good</span>;
+    case PartyReasonQuality.So_so:
+      return <span className="tag is-light">So-so</span>;
+    case PartyReasonQuality.Awful:
+      return <span className="tag is-dark">Awful</span>;
+  }
+}
+
+function SingleDate(props: {
+  date: InterestingDate,
+  selected: boolean,
+  onSelected: (selected: boolean) => void,
+  onDelete: (name: string) => void
+}) {
   return (<>
     <tr>
       <td align="center">
@@ -12,11 +32,12 @@ function SingleDate(props: { date: InterestingDate, selected: boolean, onSelecti
           className="checkbox"
           type="checkbox"
           defaultChecked={props.selected}
-          onChange={(e) => props.onSelectionChanged(e.target.checked)}
+          onChange={(e) => props.onSelected(e.target.checked)}
         />
       </td>
       <td>{props.date.name}</td>
       <td>{props.date.date.format('LL')}</td>
+      <td><button className="button is-small is-danger" onClick={() => props.onDelete(props.date.name)}>Delete</button></td>
     </tr>
   </>);
 }
@@ -26,10 +47,18 @@ function NewDate(props: { onAddDate: (date: InterestingDate) => void }) {
   const [date, setDate] = useState<moment.Moment>();
 
   return (<>
-    <form onSubmit={(e) => { e.preventDefault(); if (date !== undefined) props.onAddDate({ name: name, date: date }) }}>
-      <input className="input" type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input className="input" type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
-      <input className="button" type="submit" value="Add" />
+    <form className="block" onSubmit={(e) => { e.preventDefault(); if (date !== undefined) props.onAddDate({ name: name, date: date }) }}>
+      <div className="field is-grouped">
+        <p className="control is-expanded">
+          <input className="input" type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
+        </p>
+        <p className="control">
+          <input className="input" type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
+        </p>
+        <p className="control">
+          <input className="button is-info" type="submit" value="Add" />
+        </p>
+      </div>
     </form>
   </>);
 }
@@ -103,60 +132,85 @@ export function PartyReasons() {
     setPartyReasons(newReasons);
   }, [dates, days, selectedNames]);
 
+  const filteredReasons = partyReasons.filter(pr => pr.reason.quality >= minimumQuality && pr.reason.numberOfParties >= 4);
+
   return (<>
-    <h1 className="title">Hello, {context.name}</h1>
-    <table className="table is-NOT-sticky">
-      <thead>
-        <tr>
-          <th align="center">Select</th>
-          <th>What</th>
-          <th>When</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dates.map(d => <SingleDate
-          key={d.name}
-          date={d}
-          selected={selectedNames.has(d.name)}
-          onSelectionChanged={(s) => {
-            const names = new Set(selectedNames);
-            if (s)
-              names.add(d.name);
-            else
-              names.delete(d.name);
-            setSelectedNames(names);
-          }}
-        />)}
-      </tbody>
-    </table>
-    <NewDate onAddDate={(date) => { setDates([...dates, date]); setSelectedNames(selectedNames.add(date.name)) }} />
-    <div className="level">
-      <div className="level-left">
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'months'))}>&lt;</button>
-        {firstDay.format('LL')}
-        <button className="button" onClick={() => setFirstDay(firstDay.clone().add(1, 'months'))}>&gt;</button>
-      </div>
-    </div>
-    <div>
-      Show only reasons <select className="select" value={minimumQuality} onChange={e => setMinimumQuality(parseInt(e.target.value))}>
-      <option value={PartyReasonQuality.Fantastic}>{PartyReasonQuality[PartyReasonQuality.Fantastic]}</option>
-      <option value={PartyReasonQuality.Excellent}>{PartyReasonQuality[PartyReasonQuality.Excellent]}</option>
-      <option value={PartyReasonQuality.Good}>{PartyReasonQuality[PartyReasonQuality.Good]}</option>
-      <option value={PartyReasonQuality.So_so}>{PartyReasonQuality[PartyReasonQuality.So_so].replace('_', '-')}</option>
-      <option value={PartyReasonQuality.Awful}>{PartyReasonQuality[PartyReasonQuality.Awful]}</option>
-    </select> or better
-    </div>
-    <table className="table is-striped is-sticky">
-      <tbody>
-        {partyReasons.filter(pr => pr.reason.quality >= minimumQuality).map(pr =>
-          <tr key={pr.reason.reason}>
-            <td>{pr.date.format('LL')}</td>
-            <td>{PartyReasonQuality[pr.reason.quality].replace('_', '-')}</td>
-            <td>{pr.reason.reason}</td>
+    <h1 className="title">Party Reason Generator</h1>
+    {dates.length === 0
+      ? <p>To get started, enter one or more names and dates, please</p>
+      : <table className="table is-narrow is-striped is-NOT-sticky">
+        <thead>
+          <tr>
+            <th align="center"><input type="checkbox" disabled /></th>
+            <th>What</th>
+            <th>When</th>
+            <th></th>
           </tr>
-        )}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {dates.map(d => <SingleDate
+            key={d.name}
+            date={d}
+            selected={selectedNames.has(d.name)}
+            onSelected={(s) => {
+              const names = new Set(selectedNames);
+              if (s)
+                names.add(d.name);
+              else
+                names.delete(d.name);
+              setSelectedNames(names);
+            }}
+            onDelete={(name) => {
+              setDates(dates.filter(d => d.name !== name));
+            }}
+          />)}
+        </tbody>
+      </table>}
+    <NewDate onAddDate={(date) => { setDates([...dates, date]); setSelectedNames(selectedNames.add(date.name)) }} />
+    {dates.length > 0 && <>
+      <div className="level is-mobile">
+        <div className="level-left">
+          <div className="level-item"><button className="button is-info" onClick={() => setFirstDay(firstDay.clone().subtract(1, 'months'))}>&#9664;</button></div>
+          <div className="level-item" style={{ minWidth: 150 }}>{firstDay.format('MMMM YYYY')}</div>
+          <div className="level-item"><button className="button is-info" onClick={() => setFirstDay(firstDay.clone().add(1, 'months'))}>&#9654;</button></div>
+          <div className="level-item">Show only reasons</div>
+          <div className="level-item">
+            <select className="select" value={minimumQuality} onChange={e => setMinimumQuality(parseInt(e.target.value))}>
+              <option value={PartyReasonQuality.Fantastic}>{PartyReasonQuality[PartyReasonQuality.Fantastic]}</option>
+              <option value={PartyReasonQuality.Excellent}>{PartyReasonQuality[PartyReasonQuality.Excellent]}</option>
+              <option value={PartyReasonQuality.Good}>{PartyReasonQuality[PartyReasonQuality.Good]}</option>
+              <option value={PartyReasonQuality.So_so}>{PartyReasonQuality[PartyReasonQuality.So_so].replace('_', '-')}</option>
+              <option value={PartyReasonQuality.Awful}>{PartyReasonQuality[PartyReasonQuality.Awful]}</option>
+            </select>
+          </div>
+          <div className="level-item">or better</div>
+        </div>
+      </div>
+      {filteredReasons.length === 0
+        ? <p>No good enough party reasons in this period.</p>
+        : <table className="table is-striped is-narrow is-NOT-sticky" id="reasons">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th align="center"></th>
+              <th align="center"></th>
+              <th>Who</th>
+              <th>What</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredReasons.map(pr =>
+              <tr key={pr.reason.reason}>
+                <td>{pr.date.format('LL')}</td>
+                <td align="center"><QualityTag quality={pr.reason.quality} /></td>
+                <td align="center">{pr.reason.numberOfParties}</td>
+                <td>{pr.reason.parties}</td>
+                <td>{pr.reason.reason}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>}
+    </>}
     {/* <table className="table is-striped is-sticky">
       <thead>
         <tr>
