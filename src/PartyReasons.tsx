@@ -7,11 +7,11 @@ import { InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality 
 function QualityTag(props: { quality: PartyReasonQuality }) {
   switch (props.quality) {
     case PartyReasonQuality.Fantastic:
-      return <span className="tag is-success">Fantastic</span>;
+      return <span className="tag is-warning">Fantastic</span>;
     case PartyReasonQuality.Excellent:
-      return <span className="tag is-primary">Excellent</span>;
+      return <span className="tag is-success">Excellent</span>;
     case PartyReasonQuality.Good:
-      return <span className="tag is-warning">Good</span>;
+      return <span className="tag is-link">Good</span>;
     case PartyReasonQuality.So_so:
       return <span className="tag is-light">So-so</span>;
     case PartyReasonQuality.Awful:
@@ -44,22 +44,40 @@ function SingleEvent(props: {
 
 function NewEvent(props: {
   onAddEvent: (event: InterestingDate) => void
+  onValidateEvent: (event: InterestingDate) => string | undefined
 }) {
   const [name, setName] = useState('');
-  const [date, setDate] = useState<moment.Moment>();
+  const [date, setDate] = useState('');
+  const [dateIsValid, setDateIsValid] = useState(false);
+  const [error, setError] = useState<string>();
 
   return (<>
-    <form className="block" onSubmit={(e) => { e.preventDefault(); if (date !== undefined) props.onAddEvent({ name: name, date: date }) }}>
+    <form className="block" onSubmit={(e) => {
+      e.preventDefault();
+      const ev = { name: name, date: moment(date) };
+      const msg = props.onValidateEvent(ev);
+      if (msg === undefined) {
+        props.onAddEvent(ev);
+        setName('');
+        setDate('');
+      }
+      else
+        setError(msg);
+    }}>
       <div className="field is-grouped">
-        <p className="control is-expanded">
+        <div className="control is-expanded">
           <input className="input" type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
-        </p>
-        <p className="control">
-          <input className="input" type="text" placeholder="yyyy-mm-dd" onChange={(e) => setDate(moment(e.target.value))} />
-        </p>
-        <p className="control">
-          <input className="button is-info" type="submit" value="Add" />
-        </p>
+          {error !== undefined && <p className="help is-danger">{error}</p>}
+        </div>
+        <div className="control">
+          <input className="input" type="text" style={{ width: 120 }} placeholder="yyyy-mm-dd" pattern="\d{4}-\d{2}-\d{2}" value={date} onChange={(e) => {
+            setDate(e.target.value);
+            setDateIsValid(e.target.value.match(/\d{4}-\d{2}-\d{2}/) !== null && moment(e.target.value).isValid());
+          }} />
+        </div>
+        <div className="control">
+          <input className="button is-info" type="submit" value="Add" disabled={!(dateIsValid && name !== '')} />
+        </div>
       </div>
     </form>
   </>);
@@ -100,24 +118,11 @@ export function PartyReasons() {
     }
   }, [context]);
 
-  // // Create date list if first date changes
-  // useEffect(() => {
-  //   const days: moment.Moment[] = [];
-  //   for (let i = 0; i < 31; i++) {
-  //     let d = year.clone();
-  //     d.add(i, 'days');
-  //     if (d.month() !== year.month())
-  //       break;
-  //     days.push(d);
-  //   }
-  //   setDays(days);
-  // }, [year]);
-
   useEffect(() => {
     const generator = new PartyReasonGenerator(events.filter(d => selectedNames.has(d.name)));
     const newReasons = [];
 
-    let day = moment({year: year, month: 0, day: 1});
+    let day = moment({ year: year, month: 0, day: 1 });
     do {
       const reasons = generator.getPartyReasons(day);
       for (const r of reasons) {
@@ -128,6 +133,13 @@ export function PartyReasons() {
 
     setPartyReasons(newReasons);
   }, [events, year, selectedNames, minEvents]);
+
+  function validateEvent(event: InterestingDate): string | undefined {
+    if (events.find(e => e.name.toLowerCase() === event.name.toLowerCase()) !== undefined)
+      return 'This name is already in use';
+    // if (events.find(e => e.date.format('YYYY-MM-DD')  === event.date.format('YYYY-MM-DD')) !== undefined)
+    return undefined;
+  }
 
   // Get the minimum number of events. Cannot be less than the number of selected events
   let minE = minEvents;
@@ -140,35 +152,41 @@ export function PartyReasons() {
     <h1 className="title">Party Reason Generator</h1>
     {events.length === 0
       ? <p>To get started, enter one or more names and dates, please</p>
-      : <table className="table is-narrow is-striped is-NOT-sticky">
-        <thead>
-          <tr>
-            <th align="center"><input type="checkbox" disabled /></th>
-            <th>What</th>
-            <th>When</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {events.map(d => <SingleEvent
-            key={d.name}
-            event={d}
-            selected={selectedNames.has(d.name)}
-            onSelected={(s) => {
-              const names = new Set(selectedNames);
-              if (s)
-                names.add(d.name);
-              else
-                names.delete(d.name);
-              setSelectedNames(names);
-            }}
-            onDelete={(name) => {
-              setEvents(events.filter(d => d.name !== name));
-            }}
-          />)}
-        </tbody>
-      </table>}
-    <NewEvent onAddEvent={(event) => { setEvents([...events, event]); setSelectedNames(selectedNames.add(event.name)) }} />
+      : <div className="table-container">
+        <table className="table is-narrow is-striped is-NOT-sticky">
+          <thead>
+            <tr>
+              <th align="center"><input type="checkbox" disabled /></th>
+              <th>What</th>
+              <th>When</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map(d => <SingleEvent
+              key={d.name}
+              event={d}
+              selected={selectedNames.has(d.name)}
+              onSelected={(s) => {
+                const names = new Set(selectedNames);
+                if (s)
+                  names.add(d.name);
+                else
+                  names.delete(d.name);
+                setSelectedNames(names);
+              }}
+              onDelete={(name) => {
+                setEvents(events.filter(d => d.name !== name));
+              }}
+            />)}
+          </tbody>
+        </table>
+      </div>
+    }
+    <NewEvent
+      onAddEvent={(event) => { setEvents([...events, event]); setSelectedNames(selectedNames.add(event.name)) }}
+      onValidateEvent={(event) => validateEvent(event)}
+    />
     {events.length > 0 && <>
       <div className="level is-mobile">
         <div className="level-left">
@@ -204,7 +222,7 @@ export function PartyReasons() {
           </thead>
           <tbody>
             {filteredReasons.map(pr =>
-              <tr key={pr.date.format() + pr.reason.reason}>
+              <tr key={pr.date.format('YYYY-MM-DD') + '/' + pr.reason.parties + '/' + pr.reason.reason}>
                 <td>{pr.date.format('LL')}</td>
                 <td align="center"><QualityTag quality={pr.reason.quality} /></td>
                 <td align="center">{pr.reason.numberOfEvents}</td>
