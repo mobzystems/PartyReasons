@@ -132,7 +132,7 @@ export function PartyReasons() {
     setPartyReasons(newReasons);
   }, [dates, days, selectedNames]);
 
-  const filteredReasons = partyReasons.filter(pr => pr.reason.quality >= minimumQuality && pr.reason.numberOfParties >= 4);
+  const filteredReasons = partyReasons.filter(pr => pr.reason.quality >= minimumQuality /* && pr.reason.numberOfParties >= 4 */);
 
   return (<>
     <h1 className="title">Party Reason Generator</h1>
