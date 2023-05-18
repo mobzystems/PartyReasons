@@ -149,7 +149,7 @@ export function PartyReasons() {
   const filteredReasons = partyReasons.filter(pr => pr.reason.quality >= minimumQuality && pr.reason.numberOfEvents >= minE);
 
   return (<>
-    <h1 className="title">Party Reason Generator</h1>
+    <h1 className="title">Party Reasons!</h1>
     {events.length === 0
       ? <p>To get started, enter one or more names and dates, please</p>
       : <div className="table-container">
