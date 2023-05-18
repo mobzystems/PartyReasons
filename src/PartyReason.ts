@@ -17,7 +17,7 @@ export enum PartyReasonQuality {
 export class PartyReason {
   constructor(
     public quality: PartyReasonQuality, 
-    public numberOfParties: number,
+    public numberOfEvents: number,
     public parties: string,
     public reason: string
   ) {
@@ -39,10 +39,6 @@ export class PartyReasonGenerator {
       if (matchingPredicate !== undefined) {
         reasons.push(new PartyReason(matchingPredicate.quality, partyCount, parties, `${Formatter.formatNumber(n)} ${type}`));
       }
-      // for (const dec of decisions) {
-      //   if (dec.predicate(n))
-      //     reasons.push(new PartyReason(dec.quality, parties, `${Formatter.formatNumber(n)} ${type}`));
-      // }
       // No predicate matches: do not add a reason
     }
 
