@@ -1,7 +1,10 @@
 import { combinations } from "./combinations";
 import Formatter from "./formatter";
 
+export type EventType = 'event' | 'birthdate';
+
 export interface InterestingDate {
+  type: EventType;
   name: string,
   date: moment.Moment
 }
@@ -16,7 +19,7 @@ export enum PartyReasonQuality {
 
 export class PartyReason {
   constructor(
-    public quality: PartyReasonQuality, 
+    public quality: PartyReasonQuality,
     public numberOfEvents: number,
     public parties: string,
     public reason: string
@@ -48,33 +51,36 @@ export class PartyReasonGenerator {
     let ageInDays = this.dates.map(d => date.diff(d.date, 'days'));
 
     for (let c of this.combinations) {
+      // Make a display name for the special dates involved
+      // (the names of the dates joined with '+')
       const combiName = c.map(index => this.dates[index].name).join("+");
+      // The total age in days of all dates involved
+      const totalDays = c.reduce((prev, curr) => prev + ageInDays[curr], 0);
 
-      // For single events: create reasons for years and months
-      if (c.length === 1) {
-        const p = this.dates[c[0]]; // The first 'person'
-        if (p.date.date() === date.date()) {
-          // The day matches
-          if (p.date.month() === date.month()) {
-            // The month matches too! So it must be a birthday. Count years
-            MakeReason(p.name, 1, date.diff(p.date, 'years'), 'years', [
-              { predicate: (n) => n % 25 === 0 || n % 10 === 0, quality: PartyReasonQuality.Fantastic },
-              { predicate: (_) => true, quality: PartyReasonQuality.Excellent },
-            ]);
-          } else {
-            // Not same month, so no birthday - count months
-            MakeReason(p.name, 1, date.diff(p.date, 'months'), 'months', [
-              { predicate: (n) => n % 100 === 0, quality: PartyReasonQuality.Fantastic },
-              { predicate: (n) => n % 25 === 0, quality: PartyReasonQuality.Excellent },
-              { predicate: (n) => n % 10 === 0, quality: PartyReasonQuality.Good },
-              { predicate: (n) => n % 5 === 0, quality: PartyReasonQuality.So_so },
-            ]);
-          }
+      // Calculate on back into the past
+      const pastDate = date.clone().subtract(totalDays, 'days');
+
+      // Is the 'past date' on the same day as "we"?
+      if (pastDate.date() === date.date()) {
+        // The day matches! Check the month, too:
+        if (pastDate.month() === date.month()) {
+          // The month matches too! So it must be a birthday. Count years
+          MakeReason(combiName, c.length, date.diff(pastDate, 'years'), 'years', [
+            { predicate: (n) => n % 25 === 0 || n % 10 === 0, quality: PartyReasonQuality.Fantastic },
+            { predicate: (_) => true, quality: PartyReasonQuality.Excellent },
+          ]);
+        } else {
+          // Not same month, so no birthday - count months
+          MakeReason(combiName, c.length, date.diff(pastDate, 'months'), 'months', [
+            { predicate: (n) => n % 100 === 0, quality: PartyReasonQuality.Fantastic },
+            { predicate: (n) => n % 25 === 0, quality: PartyReasonQuality.Excellent },
+            { predicate: (n) => n % 10 === 0, quality: PartyReasonQuality.Good },
+            { predicate: (n) => n % 5 === 0, quality: PartyReasonQuality.So_so },
+          ]);
         }
       }
 
-      // 1+ people: weeks and days
-      const totalDays = c.reduce((prev, curr) => prev + ageInDays[curr], 0);
+      // Weeks and days can be done on the basis of totdal days only
       if (totalDays % 7 === 0) {
         MakeReason(combiName, c.length, totalDays / 7, 'weeks', [
           { predicate: (n) => n % 1000 === 0, quality: PartyReasonQuality.Fantastic },

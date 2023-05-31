@@ -1,8 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "./App";
-// import { combinations } from "./combinations";
 import moment from "moment";
-import { InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality } from "./PartyReason";
+import { EventType, InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality } from "./PartyReason";
 
 function QualityTag(props: { quality: PartyReasonQuality }) {
   switch (props.quality) {
@@ -35,9 +34,15 @@ function SingleEvent(props: {
           onChange={(e) => props.onSelected(e.target.checked)}
         />
       </td>
-      <td>{props.event.name}</td>
+      <td>            
+        <span className="icon">
+          <i className={props.event.type === 'birthdate' ? 'fas fa-user' : 'far fa-calendar-alt'}></i>
+        </span>
+        &nbsp;
+        <span>{props.event.name}</span>
+      </td>
       <td>{props.event.date.format('LL')}</td>
-      <td><button className="button is-small is-danger" onClick={() => props.onDelete(props.event.name)}>Delete</button></td>
+      <td><button className="button is-small is-danger" onClick={() => props.onDelete(props.event.name)}><span className="icon"><i className="far fa-trash-alt"></i></span></button></td>
     </tr>
   </>);
 }
@@ -46,6 +51,7 @@ function NewEvent(props: {
   onAddEvent: (event: InterestingDate) => void
   onValidateEvent: (event: InterestingDate) => string | undefined
 }) {
+  const [type, setType] = useState<EventType>('birthdate');
   const [name, setName] = useState('');
   const [date, setDate] = useState('');
   const [dateIsValid, setDateIsValid] = useState(false);
@@ -54,7 +60,7 @@ function NewEvent(props: {
   return (<>
     <form className="block" onSubmit={(e) => {
       e.preventDefault();
-      const ev = { name: name, date: moment(date) };
+      const ev = { type: type, name: name, date: moment(date) };
       const msg = props.onValidateEvent(ev);
       if (msg === undefined) {
         props.onAddEvent(ev);
@@ -65,8 +71,15 @@ function NewEvent(props: {
         setError(msg);
     }}>
       <div className="field is-grouped">
+        <div className="control">
+          <div key={type} className="button is-info" onClick={(e) => { e.preventDefault(); setType(type === 'birthdate' ? 'event' : 'birthdate'); }}>
+            <span className="icon">
+              <i className={type === 'birthdate' ? 'fas fa-user' : 'far fa-calendar-alt'}></i>
+            </span>
+          </div>
+        </div>
         <div className="control is-expanded">
-          <input className="input" type="text" placeholder="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" type="text" placeholder={type === 'birthdate' ? 'Name' : 'Date'} value={name} onChange={(e) => setName(e.target.value)} />
           {error !== undefined && <p className="help is-danger">{error}</p>}
         </div>
         <div className="control">
@@ -76,7 +89,12 @@ function NewEvent(props: {
           }} />
         </div>
         <div className="control">
-          <input className="button is-info" type="submit" value="Add" disabled={!(dateIsValid && name !== '')} />
+          <button className="button is-info" disabled={!(dateIsValid && name !== '')}>
+            <span className="icon">
+              <i className="fas fa-plus"></i>
+            </span>
+          </button>
+          {/* <input type="submit" hidden /> */}
         </div>
       </div>
     </form>
@@ -105,11 +123,12 @@ export function PartyReasons() {
 
   useEffect(() => {
     if (context.name === 'markus') {
-      const myDates = [
-        { name: 'markus', date: moment('1964-05-03') },
-        { name: 'annemarie', date: moment('1964-08-18') },
-        { name: 'tobias', date: moment('2001-11-26') },
-        { name: 'stephanie', date: moment('2003-07-11') }
+      const myDates: InterestingDate[] = [
+        { type: 'birthdate', name: 'markus', date: moment('1964-05-03') },
+        { type: 'birthdate', name: 'annemarie', date: moment('1964-08-18') },
+        { type: 'birthdate', name: 'tobias', date: moment('2001-11-26') },
+        { type: 'birthdate', name: 'stephanie', date: moment('2003-07-11') },
+        { type: 'event', name: 'trouwdag', date: moment('2004-09-11') }
       ];
       setEvents(myDates);
       setSelectedNames(new Set(myDates.map(d => d.name)));
@@ -216,8 +235,8 @@ export function PartyReasons() {
               <th>When</th>
               <th align="center"></th>
               <th align="center"></th>
-              <th>Who</th>
-              <th>What</th>
+              <th>Who/What</th>
+              <th>Why</th>
             </tr>
           </thead>
           <tbody>
