@@ -206,8 +206,8 @@ export function PartyReasons() {
       onAddEvent={(event) => { setEvents([...events, event]); setSelectedNames(selectedNames.add(event.name)) }}
       onValidateEvent={(event) => validateEvent(event)}
     />
-    {events.length > 0 && <>
-      <div className="level is-mobile">
+    {events.length > 0 && <div className="table-container">
+      <div className="level is-NOT-mobile">
         <div className="level-left">
           <div className="level-item"><button className="button is-info" onClick={() => setYear(year - 1)}>&#9664;</button></div>
           <div className="level-item" style={{ minWidth: 50 }}>{year}</div>
@@ -251,7 +251,7 @@ export function PartyReasons() {
             )}
           </tbody>
         </table>}
-    </>}
+    </div>}
   </>);
 }
 
