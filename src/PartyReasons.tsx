@@ -20,17 +20,19 @@ function QualityTag(props: { quality: PartyReasonQuality }) {
 
 function SingleEvent(props: {
   event: InterestingDate,
-  selected: boolean,
+  // selected: boolean,
+  selectedNames: Set<string>,
   onSelected: (selected: boolean) => void,
   onDelete: (name: string) => void
 }) {
+  const selected = props.selectedNames.has(props.event.name);
   return (<>
     <tr>
       <td align="center">
         <input
           className="checkbox"
           type="checkbox"
-          defaultChecked={props.selected}
+          defaultChecked={selected}
           onChange={(e) => props.onSelected(e.target.checked)}
         />
       </td>
@@ -160,6 +162,13 @@ export function PartyReasons() {
     return undefined;
   }
 
+  function checkAll(checked: boolean) {
+    if (checked)
+      setSelectedNames(new Set(events.map(d => d.name)));
+    else
+      setSelectedNames(new Set());
+  }
+
   // Get the minimum number of events. Cannot be less than the number of selected events
   let minE = minEvents;
   if (selectedNames.size < minE)
@@ -175,7 +184,7 @@ export function PartyReasons() {
         <table className="table is-narrow is-striped is-NOT-sticky">
           <thead>
             <tr>
-              <th align="center"><input type="checkbox" disabled /></th>
+              <th align="center"><input type="checkbox" onChange={(e) => checkAll(e.target.checked)} checked={selectedNames.size === events.length} /></th>
               <th>What</th>
               <th>When</th>
               <th></th>
@@ -183,9 +192,10 @@ export function PartyReasons() {
           </thead>
           <tbody>
             {events.map(d => <SingleEvent
-              key={d.name}
+              key={`${d.name}-${selectedNames.has(d.name)} ? '1' : '0'`}
               event={d}
-              selected={selectedNames.has(d.name)}
+              // selected={selectedNames.has(d.name)}
+              selectedNames={selectedNames}
               onSelected={(s) => {
                 const names = new Set(selectedNames);
                 if (s)

@@ -9,7 +9,6 @@ This is a work in progress. TODO:
 - Edit names and dates
 - Handle future dates (e.g. ages <0)
 - Better mobile support
-- Use checkbox in header to select all or none
 - Saving groups of dates (e.g. "families"?) Idea: save as JSON using the underlying function app
 - Remove duplicate reasons (e.g. 0 weeks, 0 days)
 - Add Explain button
