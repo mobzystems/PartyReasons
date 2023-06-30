@@ -1,7 +1,7 @@
 .modal-content {
     background-color: white;
     padding: 1rem;
-    width: calc(100vw - 2rem);
+    /* width: calc(100vw - 2rem); */
     z-index: 101;
 }
 

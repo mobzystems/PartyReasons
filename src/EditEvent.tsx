@@ -5,7 +5,7 @@ import moment from "moment";
 export default function EditEvent(
   props: {
     event: InterestingDate,
-    onOK: (oldEvent: InterestingDate, newEvent: InterestingDate) => void,
+    onOK: (oldEvent: InterestingDate, newEvent: InterestingDate) => string | undefined,
     onCancel: () => void
   }
 ) {
@@ -22,17 +22,33 @@ export default function EditEvent(
         <div className="field">
           <label className="label">Type</label>
           <div className="control">
-            <button key={type} className="button is-info" onClick={(e) => { e.preventDefault(); setType(type === 'birthdate' ? 'event' : 'birthdate'); }} title="Change type of event">
-              <span className="icon">
-                <i className={type === 'birthdate' ? 'fas fa-user' : 'far fa-calendar-alt'}></i>
-              </span>
-            </button>
+            <div className="buttons has-addons">
+              <button
+                className={`button ${type === 'birthdate' ? 'is-info' : ''}`}
+                onClick={(e) => setType('birthdate')}
+              >
+                <span className="icon">
+                  <i className="fas fa-user"></i>
+                </span>
+                <span>Birth date</span>
+              </button>
+              <button
+                className={`button ${type === 'event' ? 'is-info' : ''}`}
+                onClick={(e) => setType('event')}
+              >
+                <span className="icon">
+                  <i className="far fa-calendar-alt"></i>
+                </span>
+                <span>Event</span>
+              </button>
+            </div>
           </div>
         </div>
         <div className="field">
           <label className="label">Name</label>
           <div className="control">
             <input className="input" type="text" placeholder={type === 'birthdate' ? 'Name' : 'Date'} value={name} onChange={(e) => setName(e.target.value)} />
+            {error !== undefined && <p className="help is-danger">{error}</p>}
           </div>
         </div>
         <div className="field">
@@ -46,7 +62,17 @@ export default function EditEvent(
         </div>
 
         <div className="buttons is-justify-content-end">
-          <button className="button is-success" onClick={() => props.onOK(props.event, { name: name, date: moment(date), type: type })} disabled={!(dateIsValid && name !== '')}>OK</button>
+          <button
+            className="button is-success"
+            onClick={() => {
+              const msg = props.onOK(props.event, { name: name, date: moment(date), type: type });
+              if (msg !== undefined)
+                setError(msg);
+            }}
+            disabled={!(dateIsValid && name !== '')}
+          >
+            OK
+          </button>
           <button className="button is-light" onClick={() => props.onCancel()}>Cancel</button>
         </div>
       </div>

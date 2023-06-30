@@ -25,7 +25,7 @@ function SingleEvent(props: {
   selectedNames: Set<string>,
   onSelected: (selected: boolean) => void,
   onDelete: (name: string) => void,
-  onUpdate: (oldEvent: InterestingDate, newEvent: InterestingDate) => void
+  onUpdate: (oldEvent: InterestingDate, newEvent: InterestingDate) => string | undefined
 }) {
   const selected = props.selectedNames.has(props.event.name);
   const [editMode, setEditMode] = useState(false);
@@ -48,10 +48,16 @@ function SingleEvent(props: {
         <span>{props.event.name}</span>
       </td>
       <td>{props.event.date.format('LL')}</td>
-      <td>
+      <td align="right" className="buttons is-justify-content-end">
         <button className="button is-small is-info" onClick={() => setEditMode(true)} title="Edit this date"><span className="icon"><i className="far fa-edit"></i></span></button>
         <button className="button is-small is-danger" onClick={() => props.onDelete(props.event.name)} title="Remove this date"><span className="icon"><i className="far fa-trash-alt"></i></span></button>
-        { editMode && <EditEvent event={props.event} onCancel={() => setEditMode(false)} onOK={(o, n) => { setEditMode(false); props.onUpdate(o, n) }} /> }
+        { editMode && <EditEvent event={props.event} onCancel={() => setEditMode(false)} onOK={(o, n) => {
+          const msg = props.onUpdate(o, n);
+          if (msg === undefined) {
+            setEditMode(false);
+          }
+          return msg;
+        }} /> }
       </td>
     </tr>
   </>);
@@ -165,8 +171,8 @@ export function PartyReasons() {
     setPartyReasons(newReasons);
   }, [events, year, selectedNames, minEvents]);
 
-  function validateEvent(event: InterestingDate): string | undefined {
-    if (events.find(e => e.name.toLowerCase() === event.name.toLowerCase()) !== undefined)
+  function validateEvent(event: InterestingDate, existingEvent?: InterestingDate): string | undefined {
+    if (events.find(e => e.name.toLowerCase() === event.name.toLowerCase() && e !== existingEvent) !== undefined)
       return 'This name is already in use';
     // if (events.find(e => e.date.format('YYYY-MM-DD')  === event.date.format('YYYY-MM-DD')) !== undefined)
     return undefined;
@@ -218,6 +224,9 @@ export function PartyReasons() {
                 setEvents(events.filter(d => d.name !== name));
               }}
               onUpdate={(oldEvent, newEvent) => {
+                const msg = validateEvent(newEvent, oldEvent);
+                if (msg !== undefined)
+                  return msg;
                 // Update the event in the list
                 setEvents(events.map(e => e === oldEvent ? newEvent : e));
                 if (oldEvent.name !== newEvent.name && selectedNames.has(oldEvent.name)) {
@@ -226,6 +235,7 @@ export function PartyReasons() {
                   names.add(newEvent.name);
                   setSelectedNames(names);
                 }
+                return undefined;
               }}
             />)}
           </tbody>
