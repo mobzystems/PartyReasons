@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "./App";
 import moment from "moment";
 import { EventType, InterestingDate, PartyReason, PartyReasonGenerator, PartyReasonQuality } from "./PartyReason";
+import EditEvent from "./EditEvent";
 
 function QualityTag(props: { quality: PartyReasonQuality }) {
   switch (props.quality) {
@@ -18,16 +19,19 @@ function QualityTag(props: { quality: PartyReasonQuality }) {
   }
 }
 
+// A line in the event list
 function SingleEvent(props: {
   event: InterestingDate,
-  // selected: boolean,
   selectedNames: Set<string>,
   onSelected: (selected: boolean) => void,
-  onDelete: (name: string) => void
+  onDelete: (name: string) => void,
+  onUpdate: (oldEvent: InterestingDate, newEvent: InterestingDate) => void
 }) {
   const selected = props.selectedNames.has(props.event.name);
+  const [editMode, setEditMode] = useState(false);
+
   return (<>
-    <tr>
+    <tr key={`${props.event.name}-${props.event.type}`}>
       <td align="center">
         <input
           className="checkbox"
@@ -36,7 +40,7 @@ function SingleEvent(props: {
           onChange={(e) => props.onSelected(e.target.checked)}
         />
       </td>
-      <td>            
+      <td>
         <span className="icon">
           <i className={props.event.type === 'birthdate' ? 'fas fa-user' : 'far fa-calendar-alt'}></i>
         </span>
@@ -44,11 +48,16 @@ function SingleEvent(props: {
         <span>{props.event.name}</span>
       </td>
       <td>{props.event.date.format('LL')}</td>
-      <td><button className="button is-small is-danger" onClick={() => props.onDelete(props.event.name)}><span className="icon"><i className="far fa-trash-alt"></i></span></button></td>
+      <td>
+        <button className="button is-small is-info" onClick={() => setEditMode(true)} title="Edit this date"><span className="icon"><i className="far fa-edit"></i></span></button>
+        <button className="button is-small is-danger" onClick={() => props.onDelete(props.event.name)} title="Remove this date"><span className="icon"><i className="far fa-trash-alt"></i></span></button>
+        { editMode && <EditEvent event={props.event} onCancel={() => setEditMode(false)} onOK={(o, n) => { setEditMode(false); props.onUpdate(o, n) }} /> }
+      </td>
     </tr>
   </>);
 }
 
+// The line with a new event, e.g. type, name, date, plus button
 function NewEvent(props: {
   onAddEvent: (event: InterestingDate) => void
   onValidateEvent: (event: InterestingDate) => string | undefined
@@ -207,6 +216,16 @@ export function PartyReasons() {
               }}
               onDelete={(name) => {
                 setEvents(events.filter(d => d.name !== name));
+              }}
+              onUpdate={(oldEvent, newEvent) => {
+                // Update the event in the list
+                setEvents(events.map(e => e === oldEvent ? newEvent : e));
+                if (oldEvent.name !== newEvent.name && selectedNames.has(oldEvent.name)) {
+                  const names = new Set(selectedNames);
+                  names.delete(oldEvent.name);
+                  names.add(newEvent.name);
+                  setSelectedNames(names);
+                }
               }}
             />)}
           </tbody>

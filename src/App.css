@@ -1,0 +1,10 @@
+.modal-content {
+    background-color: white;
+    padding: 1rem;
+    width: calc(100vw - 2rem);
+    z-index: 101;
+}
+
+.modal-background {
+    z-index: 100;
+}
