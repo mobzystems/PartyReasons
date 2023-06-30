@@ -7,7 +7,7 @@ a "Quality", ranging from "Fantastic" (50 years old, 50.000 days) to "Awful" (2.
 This is a work in progress. TODO:
 
 - Edit names and dates
-- Handle future dates (e.g. ages <0)
+- Handle actual dates (e.g. age = 0 days)
 - Better mobile support
 - Saving groups of dates (e.g. "families"?) Idea: save as JSON using the underlying function app
 - Remove duplicate reasons (e.g. 0 weeks, 0 days)

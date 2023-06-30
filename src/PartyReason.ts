@@ -51,6 +51,10 @@ export class PartyReasonGenerator {
     let ageInDays = this.dates.map(d => date.diff(d.date, 'days'));
 
     for (let c of this.combinations) {
+      // Skip any combinations in which the age of an event is < 0:
+      if (c.find((n => ageInDays[n] < 0)) !== undefined) {
+        continue;
+      }
       // Make a display name for the special dates involved
       // (the names of the dates joined with '+')
       const combiName = c.map(index => this.dates[index].name).join("+");
@@ -80,7 +84,7 @@ export class PartyReasonGenerator {
         }
       }
 
-      // Weeks and days can be done on the basis of totdal days only
+      // Weeks and days can be done on the basis of total days only
       if (totalDays % 7 === 0) {
         MakeReason(combiName, c.length, totalDays / 7, 'weeks', [
           { predicate: (n) => n % 1000 === 0, quality: PartyReasonQuality.Fantastic },

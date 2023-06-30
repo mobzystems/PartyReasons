@@ -74,7 +74,8 @@ function NewEvent(props: {
     }}>
       <div className="field is-grouped">
         <div className="control">
-          <div key={type} className="button is-info" onClick={(e) => { e.preventDefault(); setType(type === 'birthdate' ? 'event' : 'birthdate'); }}>
+          {/* DO NOT MAKE DIV THIS A BUTTON. If you do, the add button no longer responds to pressing Enter */}
+          <div key={type} className="button is-info" onClick={(e) => { e.preventDefault(); setType(type === 'birthdate' ? 'event' : 'birthdate'); }} title="Change type of event">
             <span className="icon">
               <i className={type === 'birthdate' ? 'fas fa-user' : 'far fa-calendar-alt'}></i>
             </span>
