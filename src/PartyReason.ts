@@ -37,12 +37,15 @@ export class PartyReasonGenerator {
 
   getPartyReasons = (date: moment.Moment): PartyReason[] => {
     // Internal helper function: create a reason based on a series of predicates
-    function MakeReason(parties: string, partyCount: number, n: number, type: string, decisions: { predicate: (x: number) => boolean, quality: PartyReasonQuality }[]) {
+    function MakeReason(parties: string, partyCount: number, n: number, type: string, decisions: { predicate: (x: number) => boolean, quality: PartyReasonQuality }[]): PartyReason | undefined {
       const matchingPredicate = decisions.find(dec => dec.predicate(n));
       if (matchingPredicate !== undefined) {
-        reasons.push(new PartyReason(matchingPredicate.quality, partyCount, parties, `${Formatter.formatNumber(n)} ${type}`));
+        const newReason = new PartyReason(matchingPredicate.quality, partyCount, parties, `${Formatter.formatNumber(n)} ${type}`);
+        reasons.push(newReason);
+        return newReason;
       }
       // No predicate matches: do not add a reason
+      return undefined;
     }
 
     let reasons: PartyReason[] = [];
@@ -65,9 +68,15 @@ export class PartyReasonGenerator {
       const pastDate = date.clone().subtract(totalDays, 'days');
 
       // Is the 'past date' on the same day as "we"?
-      if (pastDate.date() === date.date()) {
-        // The day matches! Check the month, too:
-        if (pastDate.month() === date.month()) {
+      if (pastDate.date() === date.date()) { // This is the day of the month!
+        // The day matches! 
+        if (pastDate.year() === date.year() && pastDate.month() === date.month()) {
+          // If the year AND the month match, it's the date itself...
+          let reason = MakeReason(combiName, c.length, 0, 'TODAY', [
+            { predicate: (_) => true, quality: PartyReasonQuality.Fantastic },
+          ]);
+          reason!.reason = "Today";
+        } else if (pastDate.month() === date.month()) {
           // The month matches too! So it must be a birthday. Count years
           MakeReason(combiName, c.length, date.diff(pastDate, 'years'), 'years', [
             { predicate: (n) => n % 25 === 0 || n % 10 === 0, quality: PartyReasonQuality.Fantastic },
@@ -76,31 +85,33 @@ export class PartyReasonGenerator {
         } else {
           // Not same month, so no birthday - count months
           MakeReason(combiName, c.length, date.diff(pastDate, 'months'), 'months', [
-            { predicate: (n) => n % 100 === 0, quality: PartyReasonQuality.Fantastic },
-            { predicate: (n) => n % 25 === 0, quality: PartyReasonQuality.Excellent },
-            { predicate: (n) => n % 10 === 0, quality: PartyReasonQuality.Good },
-            { predicate: (n) => n % 5 === 0, quality: PartyReasonQuality.So_so },
+            { predicate: (n) => (n !== 0) && (n % 100 === 0), quality: PartyReasonQuality.Fantastic },
+            { predicate: (n) => (n !== 0) && (n % 25 === 0), quality: PartyReasonQuality.Excellent },
+            { predicate: (n) => (n !== 0) && (n % 10 === 0), quality: PartyReasonQuality.Good },
+            { predicate: (n) => (n !== 0) && (n % 5 === 0), quality: PartyReasonQuality.So_so },
           ]);
         }
       }
 
       // Weeks and days can be done on the basis of total days only
       if (totalDays % 7 === 0) {
+        // Make week reasons, but not for 0
         MakeReason(combiName, c.length, totalDays / 7, 'weeks', [
-          { predicate: (n) => n % 1000 === 0, quality: PartyReasonQuality.Fantastic },
-          { predicate: (n) => n % 500 === 0, quality: PartyReasonQuality.Excellent },
-          { predicate: (n) => n % 250 === 0, quality: PartyReasonQuality.Good },
-          { predicate: (n) => n % 100 === 0, quality: PartyReasonQuality.So_so },
-          { predicate: (n) => n % 25 === 0, quality: PartyReasonQuality.Awful },
+          { predicate: (n) => (n !== 0) && (n % 1000 === 0), quality: PartyReasonQuality.Fantastic },
+          { predicate: (n) => (n !== 0) && (n % 500 === 0), quality: PartyReasonQuality.Excellent },
+          { predicate: (n) => (n !== 0) && (n % 250 === 0), quality: PartyReasonQuality.Good },
+          { predicate: (n) => (n !== 0) && (n % 100 === 0), quality: PartyReasonQuality.So_so },
+          { predicate: (n) => (n !== 0) && (n % 25 === 0), quality: PartyReasonQuality.Awful },
         ]);
       }
 
+      // Make day reasons - but not for 0
       MakeReason(combiName, c.length, totalDays, 'days', [
-        { predicate: (n) => n % 5000 === 0, quality: PartyReasonQuality.Fantastic },
-        { predicate: (n) => n % 1000 === 0, quality: PartyReasonQuality.Excellent },
-        { predicate: (n) => n % 500 === 0, quality: PartyReasonQuality.Good },
-        { predicate: (n) => n % 250 === 0, quality: PartyReasonQuality.So_so },
-        { predicate: (n) => n % 100 === 0, quality: PartyReasonQuality.Awful },
+        { predicate: (n) => (n !== 0) && (n % 5000 === 0), quality: PartyReasonQuality.Fantastic },
+        { predicate: (n) => (n !== 0) && (n % 1000 === 0), quality: PartyReasonQuality.Excellent },
+        { predicate: (n) => (n !== 0) && (n % 500 === 0), quality: PartyReasonQuality.Good },
+        { predicate: (n) => (n !== 0) && (n % 250 === 0), quality: PartyReasonQuality.So_so },
+        { predicate: (n) => (n !== 0) && (n % 100 === 0), quality: PartyReasonQuality.Awful },
       ]);
     }
 
